@@ -1,37 +1,29 @@
 package org.sylvia;
 
+import io.swagger.client.model.LiftRide;
+
 public class LiftRideEvent {
 
     private int resortID;
     private String seasonID;
     private String dayID;
     private int skierID;
-    private int time;
-    private int liftID;
+    private LiftRide liftRide;
 
-    public LiftRideEvent(int skierID, int resortID, String seasonID, String dayID, int liftID, int time) {
+    public LiftRideEvent(int skierID, int resortID, String seasonID, String dayID, LiftRide liftRide) {
         this.skierID = skierID;
         this.resortID = resortID;
         this.seasonID = seasonID;
         this.dayID = dayID;
-        this.time = time;
-        this.liftID = liftID;
+        this.liftRide = liftRide;
     }
 
-    public int getTime() {
-        return time;
+    public LiftRide getLiftRide() {
+        return liftRide;
     }
 
-    public void setTime(int time) {
-        this.time = time;
-    }
-
-    public int getLiftID() {
-        return liftID;
-    }
-
-    public void setLiftID(int liftID) {
-        this.liftID = liftID;
+    public void setLiftRide(LiftRide liftRide) {
+        this.liftRide = liftRide;
     }
 
     public int getSkierID() {

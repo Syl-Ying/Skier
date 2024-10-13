@@ -1,22 +1,24 @@
 package org.sylvia;
 
+import io.swagger.client.model.LiftRide;
+
 import java.util.Random;
 import java.util.concurrent.BlockingDeque;
 
-public class LiftRideGenerator implements Runnable {
+public class LiftRideProducer implements Runnable {
 
     private int totalEvents;
     private BlockingDeque<LiftRideEvent> eventQueue;
     private Random random = new Random();
 
-    public LiftRideGenerator(BlockingDeque<LiftRideEvent> eventQueue, int totalEvents) {
+    public LiftRideProducer(BlockingDeque<LiftRideEvent> eventQueue, int totalEvents) {
         this.eventQueue = eventQueue;
         this.totalEvents = totalEvents;
     }
 
     @Override
     public void run() {
-        System.out.println("GeneratorThread: starts to run!");
+        System.out.println("Start generating lift ride events!\n");
         for (int i = 0; i < totalEvents; i++) {
             // Generate a random lift ride event
             LiftRideEvent liftRide = new LiftRideEvent(
@@ -24,8 +26,7 @@ public class LiftRideGenerator implements Runnable {
                     random.nextInt(10) + 1, // resortID [1, 10]
                     "2024", // seasonID 2024
                     "1", // dayID 1
-                    random.nextInt(40) + 1, // liftID [1, 40]
-                    random.nextInt(360) + 1// time [1, 360]
+                    new LiftRide().liftID(random.nextInt(40) + 1).time(random.nextInt(360) + 1) // liftID [1, 40], time [1, 360]
             );
 
             try {
