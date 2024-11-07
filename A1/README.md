@@ -1,0 +1,4 @@
+- How to run client
+  - Run the main() in SkierClient class.
+- Where to change the Url
+  - Change URL in SERVER_URL variable of HttpPostThread class.
