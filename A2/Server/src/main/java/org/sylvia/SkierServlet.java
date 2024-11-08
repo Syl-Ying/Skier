@@ -32,7 +32,7 @@ import static org.sylvia.Constant.*;
 public class SkierServlet extends HttpServlet {
 
     private Gson gson = new Gson();
-    private static final Integer NUM_CHANNELS = 5;
+    private static final Integer NUM_CHANNELS = 30;
     private static final Logger logger = Logger.getLogger(SkierServlet.class.getName());
     private BlockingQueue<Channel> channelPool;
 
@@ -77,7 +77,7 @@ public class SkierServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        logger.info("Received POST request: " + req.getPathInfo());
+        // logger.info("Received POST request: " + req.getPathInfo());
         String pathInfo = req.getPathInfo(); // /{resortID}/seasons/{seasonID}/days/{dayID}/skiers/{skierID}:
         if (!isUrlPathValid(pathInfo, resp)) {
             logger.warning("Invalid URL path: " + pathInfo);
@@ -108,7 +108,7 @@ public class SkierServlet extends HttpServlet {
         // Send the formatted message to RabbitMQ
         try {
             sendToQueue(msg.toString());
-            logger.info("Message sent to RabbitMQ successfully.");
+            // logger.info("Message sent to RabbitMQ successfully.");
         } catch (InterruptedException | IOException e) {
             logger.severe("Failed to send message to queue: " + e.getMessage());
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500
@@ -210,7 +210,7 @@ public class SkierServlet extends HttpServlet {
             // Return the channel to the pool
             if (channel != null) {
                 channelPool.offer(channel);
-                logger.info("Channel returned to the pool.");
+                // logger.info("Channel returned to the pool.");
             }
         }
 
