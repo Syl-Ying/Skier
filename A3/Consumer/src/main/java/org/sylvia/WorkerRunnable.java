@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
-import org.slf4j.LoggerFactory;
 import org.sylvia.config.RabbitMqConfig;
 import org.sylvia.model.LiftRideMessage;
 
@@ -37,7 +36,7 @@ public class WorkerRunnable implements Runnable {
         try {
             Channel channel = connection.createChannel();
             channel.queueDeclare(RabbitMqConfig.RABBITMQ_NAME, false, false, false, null);
-            channel.basicQos(10); // accept only certain unacked message at a time
+            channel.basicQos(50); // accept only certain unacked message at a time
             // logger.info("Waiting for messages from queue: " + Constant.RABBITMQ_NAME);
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
@@ -51,6 +50,7 @@ public class WorkerRunnable implements Runnable {
                 }
             };
 
+            // register a consumer to listen to the queue
             channel.basicConsume(RabbitMqConfig.RABBITMQ_NAME, false, deliverCallback, consumerTag -> {});
         } catch (IOException e) {
             logger.severe("Failed to consume messages: "+ e.getMessage());
@@ -58,7 +58,7 @@ public class WorkerRunnable implements Runnable {
     }
 
     private void doWork(String msg) {
-        // parse message todo: diff api -> msg -> model, use diff consumer
+        // parse message
         LiftRideMessage liftRideMessage = gson.fromJson(msg, LiftRideMessage.class);
 
         Integer skierID = Integer.valueOf(String.valueOf(liftRideMessage.getSkierID()));

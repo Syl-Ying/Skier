@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class LiftRideConsumer {
 
     private static final Logger logger = Logger.getLogger(LiftRideConsumer.class.getName());
-    private static final Integer NUM_WORKERS = 25;
+    private static final Integer NUM_WORKERS = 30;
     private static final DynamoDB dynamoDB = new DynamoDB();
 
     public static void main(String[] args) throws IOException, TimeoutException {
@@ -33,10 +33,9 @@ public class LiftRideConsumer {
 
         dynamoDB.testDynamoDbConnection();
 
-        ExecutorService pool = Executors.newCachedThreadPool();
+        ExecutorService pool = Executors.newFixedThreadPool(NUM_WORKERS);
         for (int i =0; i < NUM_WORKERS; i++) {
             pool.execute(new WorkerRunnable(connection, gson, logger, skierLiftRidesMap, dynamoDB));
         }
-
     }
 }

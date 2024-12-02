@@ -4,8 +4,8 @@ package org.sylvia;
 import org.sylvia.config.DynamoDbConfig;
 import org.sylvia.model.LiftRideMessage;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.*;
+import software.amazon.awssdk.services.dynamodb.waiters.DynamoDbWaiter;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class DynamoDB {
 
         updateSkierTable(skierID, skierTableSortKey, liftID, time, vertical, resortID);
 
-        updateResortSeasons(resortID, seasonID);
+        // updateResortSeasons(resortID, seasonID);
     }
 
     private void updateSkierTable(String skierID, String sortKey, int liftID, int time, int vertical, String resortID) {
@@ -123,6 +123,10 @@ public class DynamoDB {
 
     public void testDynamoDbConnection() {
         try {
+            // Delete and recreate the table
+            deleteTable(ddb, DynamoDbConfig.SKIER_TABLE_NAME);
+            createTable(ddb, DynamoDbConfig.SKIER_TABLE_NAME);
+
             // Test SkierTable
             ddb.describeTable(request -> request.tableName(DynamoDbConfig.SKIER_TABLE_NAME));
             System.out.println("DynamoDB connection successful: " + DynamoDbConfig.SKIER_TABLE_NAME);
@@ -134,6 +138,75 @@ public class DynamoDB {
         } catch (Exception e) {
             System.err.println("Error connecting to DynamoDB: " + e.getMessage());
             throw new RuntimeException("DynamoDB setup test failed", e);
+        }
+    }
+
+    private void deleteTable(DynamoDbClient dynamoDb, String tableName) {
+        try {
+            logger.info("Deleting table: " + tableName);
+
+            // Delete the table
+            dynamoDb.deleteTable(DeleteTableRequest.builder().tableName(tableName).build());
+
+            // Wait for the table to be deleted
+            DynamoDbWaiter waiter = dynamoDb.waiter();
+            waiter.waitUntilTableNotExists(
+                    DescribeTableRequest.builder().tableName(tableName).build()
+            );
+
+            logger.info("Table deleted successfully.");
+        } catch (ResourceNotFoundException e) {
+            logger.info("Table does not exist. Skipping delete.");
+        } catch (Exception e) {
+            logger.warning("Error deleting table: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void createTable(DynamoDbClient dynamoDb, String tableName) {
+        try {
+            logger.info("Creating table: " + tableName);
+
+            // Create the table
+            CreateTableRequest request = CreateTableRequest.builder()
+                    .tableName(tableName)
+                    .keySchema(
+                            KeySchemaElement.builder().attributeName("skierID").keyType(KeyType.HASH).build(),
+                            KeySchemaElement.builder().attributeName("seasonID#dayID").keyType(KeyType.RANGE).build()
+                    )
+                    .attributeDefinitions(
+                            AttributeDefinition.builder().attributeName("skierID").attributeType(ScalarAttributeType.S).build(),
+                            AttributeDefinition.builder().attributeName("resortID").attributeType(ScalarAttributeType.S).build(),
+                            AttributeDefinition.builder().attributeName("seasonID#dayID").attributeType(ScalarAttributeType.S).build(),
+                            AttributeDefinition.builder().attributeName("seasonID#dayID#skierID").attributeType(ScalarAttributeType.S).build()
+                    )
+                    .globalSecondaryIndexes(
+                            GlobalSecondaryIndex.builder()
+                                    .indexName("ResortIndex") // GSI name
+                                    .keySchema(
+                                            KeySchemaElement.builder().attributeName("resortID").keyType(KeyType.HASH).build(),
+                                            KeySchemaElement.builder().attributeName("seasonID#dayID#skierID").keyType(KeyType.RANGE).build()
+                                    )
+                                    .projection(Projection.builder()
+                                            .projectionType(ProjectionType.KEYS_ONLY)
+                                            .build())
+                                    .build()
+                    )
+                    .billingMode(BillingMode.PAY_PER_REQUEST)
+                    .build();
+
+            dynamoDb.createTable(request);
+
+            // Wait for the table to be active
+            DynamoDbWaiter waiter = dynamoDb.waiter();
+            waiter.waitUntilTableExists(
+                    DescribeTableRequest.builder().tableName(tableName).build()
+            );
+
+            logger.info("Table created successfully.");
+        } catch (Exception e) {
+            logger.severe("Error creating table: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
